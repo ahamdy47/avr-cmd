@@ -1,0 +1,30 @@
+avr cmd line programming:
+
+NOTE: these commands take 3 things into consideration
+1st) if externale libraries are used, they must be specified in the compilation command by -l (avr-gcc)
+2nd) the type of mcu use below is the "ATmega328P" any other can be used by specifing the correct -mmcu (avr-gcc) and -p (avrdude)
+3rd) the programmer use is "Atmel ICE (ISP)" specified by -c (avrdude)
+NOTE: all specifications can be looked up via docs for avr-gcc, avr-libc, and avrdude
+NOTE: these following commands can be simplified by Makefile and can add extended features including library linking and disassembly
+
+-compile source file
+-----------------------------------------------------------------
+avr-gcc -Os -mmcu=atmega328p -o <new filename>.elf <filename>.cpp
+-----------------------------------------------------------------
+
+-convert to hex format
+-----------------------------------------------------
+avr-objcopy -O ihex <filename>.elf <new filename>.hex
+-----------------------------------------------------
+
+-upload via programmer
+----------------------------------------------------------
+avrdude -p m328p -c atmelice_isp -U flash:w:<filename>.hex
+----------------------------------------------------------
+
+TODO: Build the followong libraries decoupled from Arduino:
+-Serial UART
+-SPI
+-Wire/I2C
+-SD
+-RF24/Network/Mesh
