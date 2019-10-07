@@ -1,8 +1,9 @@
 # AVR Cmd Line Interface
-#
+# 
+# -MakeLine [1.0]
 #=======================
 #  
-# this makefile is designed as a minimal compiler/flasher interface
+# This makefile is designed as a minimal compiler/flasher interface
 #
 # 3 modes of operation + 2 for cleaning
 # 
@@ -31,6 +32,7 @@ LIBS=libraries
 LIB_NAME=uart
 LINK=-luart
 
+.PHONY: flash-core compile-core
 flash-core: compile-core
 	avrdude -p $(PART) -c $(PROG) -U flash:w:$(FILENAME).hex
 
@@ -39,6 +41,7 @@ compile-core:
 	if exist $(FILENAME).c avr-gcc -Os -std=gnu11 -mmcu=$(MCU) -DF_CPU=$(F_CPU) $(FILENAME).c -o $(FILENAME).elf -I$(LIBS) -L$(LIBS) $(LINK)
 	if exist $(FILENAME).elf avr-objcopy -O ihex $(FILENAME).elf $(FILENAME).hex
 
+.PHONY: flash compile
 flash: compile
 	avrdude -p $(PART) -c $(PROG) -U flash:w:$(FILENAME).hex
 
@@ -47,18 +50,23 @@ compile:
 	if exist $(FILENAME).c avr-gcc -Os -std=gnu11 -mmcu=$(MCU) -DF_CPU=$(F_CPU) $(FILENAME).c -o $(FILENAME).elf
 	if exist $(FILENAME).elf avr-objcopy -O ihex $(FILENAME).elf $(FILENAME).hex
 
+.PHONY: gen-lib lib-obj lib-dir
 gen-lib: lib-obj
 	$(foreach file, $(wildcard $(LIBS)/$(LIB_SRC)/*.o), avr-ar rcs -o $(LIBS)/lib$(LIB_NAME).a $(file) &)
 
-lib-obj: dir
+lib-obj: lib-dir
 	$(foreach file, $(wildcard $(LIB_SRC)/*.c), avr-gcc -Os -std=gnu11 -mmcu=$(MCU) -DF_CPU=$(F_CPU) -c -I$(LIB_SRC) $(file) -o $(LIBS)/$(file).o &)
 	$(foreach file, $(wildcard $(LIB_SRC)/*.cpp), avr-g++ -Os -std=gnu++11 -mmcu=$(MCU) -DF_CPU=$(F_CPU) -c -I$(LIB_SRC) $(file) -o $(LIBS)/$(file).o &)
 	$(foreach file, $(wildcard $(LIB_SRC)/*.S), avr-gcc -c -g -x assembler-with-cpp -mmcu=$(MCU) -DF_CPU=$(F_CPU) -c -I$(LIB_SRC) $(file) -o $(LIBS)/$(file).o &)
 	cd $(LIB_SRC) & $(foreach file, $(notdir $(wildcard $(LIB_SRC)/*.h)),  copy $(file) ..\$(LIBS)\$(file) &)
-dir:
+
+lib-dir:
 	if exist $(LIBS)\$(LIB_SRC) rd /s /q $(LIBS)\$(LIB_SRC)
 	if exist $(LIBS)\lib$(LIB_NAME).a del $(LIBS)\lib$(LIB_NAME).a
 	mkdir $(LIBS)\$(LIB_SRC)
+
+.PHONY: clean-all clean-lib clean-all
+clean-all: clean 
 
 clean-lib:
 	if exist $(LIBS) rd /s /q $(LIBS)
